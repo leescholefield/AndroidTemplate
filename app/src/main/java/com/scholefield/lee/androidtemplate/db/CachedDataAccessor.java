@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import com.scholefield.lee.androidtemplate.cache.Cache;
 import com.scholefield.lee.androidtemplate.cache.SoftCache;
+import com.scholefield.lee.androidtemplate.db.query.DeleteQuery;
 import com.scholefield.lee.androidtemplate.db.query.SearchQuery;
 
 import java.util.ArrayList;
@@ -117,6 +118,15 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
         cache.put(query.getQuery(), results);
 
         return results;
+    }
+
+    @Override
+    public void remove(DeleteQuery query) {
+        try {
+            database.delete(query);
+        } catch (DatabaseException e) {
+            throw new RuntimeException("Could not delete data from the database");
+        }
     }
 
     private void appendToCacheList(String key, T item) {
