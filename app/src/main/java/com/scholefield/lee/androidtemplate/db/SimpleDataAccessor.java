@@ -104,7 +104,11 @@ public class SimpleDataAccessor<T> implements DataAccessor<T> {
      */
     @Override
     public void remove(DeleteQuery query) {
-
+        try {
+            database.delete(query);
+        } catch (DatabaseException e) {
+            throw new RuntimeException("Could not delete data from the database");
+        }
     }
 
     private List<T> cursorToItemList(Cursor cursor, DataReader<T> reader) {
