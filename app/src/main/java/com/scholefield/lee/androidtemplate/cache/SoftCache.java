@@ -2,10 +2,7 @@ package com.scholefield.lee.androidtemplate.cache;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * An in-memory cache that stores each item as a {@code SoftReference}.
@@ -115,7 +112,7 @@ public class SoftCache<K, V> implements Cache<K, V> {
 
         synchronized (this) {
 
-            if (itemMap.size() >= maxSize) {
+            if (keyInsertionOrder.size() >= maxSize) {
                 K oldest = keyInsertionOrder.poll();
                 itemMap.remove(oldest);
             }

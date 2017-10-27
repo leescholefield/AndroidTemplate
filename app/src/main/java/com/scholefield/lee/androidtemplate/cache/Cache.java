@@ -34,11 +34,6 @@ public interface Cache<K, T> {
     int size();
 
     /**
-     * Returns the weight to give this item when saving it to the cache.
-     */
-    int itemWeight(T item);
-
-    /**
      * Returns the maximum size in bytes that the cache can hold.
      */
     int maxSize();
