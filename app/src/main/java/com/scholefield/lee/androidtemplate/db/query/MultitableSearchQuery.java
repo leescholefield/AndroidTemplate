@@ -1,9 +1,11 @@
 package com.scholefield.lee.androidtemplate.db.query;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
  * todo more than two tables.
+ * todo doesnt make sense to have getTable, getWhere from query since they return single string
  */
 public class MultitableSearchQuery implements Query {
 
@@ -73,5 +75,31 @@ public class MultitableSearchQuery implements Query {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Returns the SQL table this query should be performed on.
+     */
+    @Override
+    public String getTable() {
+        return null;
+    }
+
+    /**
+     * Returns the SQL where clause or {@code null} if one was not given.
+     */
+    @Nullable
+    @Override
+    public String getWhereClause() {
+        return null;
+    }
+
+    /**
+     * Returns an array of table columns that this query should be performed on. If this is not applicable this will
+     * return an empty array.
+     */
+    @Override
+    public String[] getColumns() {
+        return new String[0];
     }
 }
