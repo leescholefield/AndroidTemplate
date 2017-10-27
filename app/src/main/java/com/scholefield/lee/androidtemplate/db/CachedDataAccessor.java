@@ -1,7 +1,5 @@
 package com.scholefield.lee.androidtemplate.db;
 
-import android.content.ContentValues;
-import android.database.Cursor;
 import com.scholefield.lee.androidtemplate.cache.Cache;
 import com.scholefield.lee.androidtemplate.cache.SoftCache;
 import com.scholefield.lee.androidtemplate.db.query.DeleteQuery;
@@ -26,9 +24,7 @@ import java.util.List;
  *
  * @param <T> the type of object saved to the database.
  */
-public class CachedDataAccessor<T> implements DataAccessor<T> {
-
-    private Database database;
+public class CachedDataAccessor<T> extends SimpleDataAccessor<T> {
 
     private Cache<String, List<T>> cache;
     private static final int DEFAULT_CACHE_SIZE = 5;
@@ -37,13 +33,13 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
     private DataWriter<T> writer;
 
     public CachedDataAccessor(Database database) {
+        super(database);
         cache = new SoftCache<>(DEFAULT_CACHE_SIZE);
-        this.database = database;
     }
 
     public CachedDataAccessor(Database database, int cacheSize) {
+        super(database);
         cache = new SoftCache<>(cacheSize);
-        this.database = database;
     }
 
     /**
@@ -71,17 +67,9 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
      */
     @Override
     public void put(T obj, String table, DataWriter<T> writer) {
-        ContentValues cv = writer.toContentValues(obj);
-        try {
-
-            long id = database.insert(table, cv);
-            if (id != -1) {
-                appendToCacheList(table, obj);
-            }
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException("Could not insert data into the database", e);
-        }
+        super.put(obj, table, writer);
+        // super throws an exception if obj could not be inserted in db so if we get to this we can assume it was inserted
+        appendToCacheList(table, obj);
     }
 
     @Override
@@ -102,18 +90,8 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
                 return results;
             }
         }
-
-        Cursor c = null;
-        try {
-            c = database.get(query);
-            results = cursorToItemList(c, reader);
-        }
-        catch (DatabaseException e) {
-            throw new RuntimeException("Could not insert data into the database", e);
-        }
-        finally {
-            if (c != null) c.close();
-        }
+        // super throws an exception if db could not be accessed
+        results = super.get(query, forceUpdate, reader);
 
         cache.put(query.getQuery(), results);
 
@@ -122,11 +100,7 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
 
     @Override
     public void remove(DeleteQuery query) {
-        try {
-            database.delete(query);
-        } catch (DatabaseException e) {
-            throw new RuntimeException("Could not delete data from the database");
-        }
+        super.remove(query);
     }
 
     private void appendToCacheList(String key, T item) {
@@ -137,19 +111,6 @@ public class CachedDataAccessor<T> implements DataAccessor<T> {
         }
 
         existing.add(item);
-    }
-
-    private List<T> cursorToItemList(Cursor cursor, DataReader<T> reader) {
-        List<T> result = new ArrayList<>();
-
-        while (cursor.moveToNext()) {
-            T item = reader.fromCursor(cursor);
-            if (item != null) {
-                result.add(item);
-            }
-        }
-
-        return result;
     }
 
     private List<T> checkCache(String key) {
