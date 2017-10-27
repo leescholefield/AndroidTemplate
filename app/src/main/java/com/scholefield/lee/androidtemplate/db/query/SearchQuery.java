@@ -108,4 +108,30 @@ public class SearchQuery implements Query {
 
         return builder.toString();
     }
+
+    /**
+     * Returns the SQL table this query should be performed on.
+     */
+    @Override
+    public String getTable() {
+        return table;
+    }
+
+    /**
+     * Returns the SQL where clause or {@code null} if one was not given.
+     */
+    @Nullable
+    @Override
+    public String getWhereClause() {
+        return where;
+    }
+
+    /**
+     * Returns an array of table columns that this query should be performed on. If this is not applicable this will
+     * return an empty array.
+     */
+    @Override
+    public String[] getColumns() {
+        return columnsToReturn == null ? new String[0] : columnsToReturn;
+    }
 }
