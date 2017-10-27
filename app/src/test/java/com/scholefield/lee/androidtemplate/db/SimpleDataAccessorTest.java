@@ -90,6 +90,18 @@ public class SimpleDataAccessorTest {
         accessor.get(new SearchQuery("foo"), false);
     }
 
+    @Test
+    public void remove_removes_from_database() throws Exception {
+        insertDataIntoDatabase(new TestObject("name"));
+        List<TestObject> before = getCurrentDbContents();
+        assertEquals(1, before.size());
+
+        classUnderTest.remove(new DeleteQuery("foo"));
+
+        List<TestObject> after = getCurrentDbContents();
+        assertEquals(0, after.size());
+    }
+
     private List<TestObject> getCurrentDbContents() throws Exception {
         Cursor c = database.get(new SearchQuery("foo"));
         List<TestObject> result = new ArrayList<>();
@@ -100,6 +112,7 @@ public class SimpleDataAccessorTest {
             result.add(new TestObject(id, name));
         }
 
+        c.close();
         return result;
     }
 
