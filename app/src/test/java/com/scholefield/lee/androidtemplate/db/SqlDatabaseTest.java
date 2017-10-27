@@ -3,6 +3,7 @@ package com.scholefield.lee.androidtemplate.db;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.Nullable;
 import com.scholefield.lee.androidtemplate.db.query.Query;
 import org.junit.After;
 import org.junit.Before;
@@ -93,7 +94,7 @@ public class SqlDatabaseTest {
     public void get_successfully_retrieves_data() throws Exception {
         insertTestDataIntoTable1();
 
-        Cursor c = classUnderTest.get(new Query() {
+        Cursor c = classUnderTest.get(new TestQuery() {
             @Override
             public String getQuery() {
                 return "SELECT * FROM first";
@@ -105,7 +106,7 @@ public class SqlDatabaseTest {
 
     @Test
     public void get_returns_empty_cursor_when_no_data_in_the_database() throws Exception {
-        Cursor c = classUnderTest.get(new Query() {
+        Cursor c = classUnderTest.get(new TestQuery() {
             @Override
             public String getQuery() {
                 return "SELECT * FROM first";
@@ -120,7 +121,7 @@ public class SqlDatabaseTest {
     public void get_with_invalid_query_throws_exception() throws Exception {
         expectedException.expect(DatabaseException.class);
 
-        classUnderTest.get(new Query() {
+        classUnderTest.get(new TestQuery() {
             @Override
             public String getQuery() {
                 return "invalid query";
@@ -132,7 +133,7 @@ public class SqlDatabaseTest {
     public void delete_successfully_deletes_a_single_record() throws Exception {
         insertTestDataIntoTable1();
 
-        classUnderTest.delete(new Query() {
+        classUnderTest.delete(new TestQuery() {
             @Override
             public String getQuery() {
                 return "DELETE FROM first WHERE name='lee'";
@@ -150,7 +151,7 @@ public class SqlDatabaseTest {
     public void delete_successfully_removes_all_records() throws Exception {
         insertTestDataIntoTable1();
 
-        classUnderTest.delete(new Query() {
+        classUnderTest.delete(new TestQuery() {
             @Override
             public String getQuery() {
                 return "DELETE FROM first";
@@ -265,6 +266,34 @@ public class SqlDatabaseTest {
                 return new String[]{"this is invalid sql"};
             }
         };
+    }
+
+    private abstract class TestQuery implements Query {
+        /**
+         * Returns the SQL table this query should be performed on.
+         */
+        @Override
+        public String getTable() {
+            return null;
+        }
+
+        /**
+         * Returns the SQL where clause or {@code null} if one was not given.
+         */
+        @Nullable
+        @Override
+        public String getWhereClause() {
+            return null;
+        }
+
+        /**
+         * Returns an array of table columns that this query should be performed on. If this is not applicable this will
+         * return an empty array.
+         */
+        @Override
+        public String[] getColumns() {
+            return new String[0];
+        }
     }
 
 }
