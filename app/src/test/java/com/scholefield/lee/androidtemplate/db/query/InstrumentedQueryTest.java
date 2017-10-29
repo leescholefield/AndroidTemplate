@@ -38,6 +38,41 @@ public class InstrumentedQueryTest {
     }
 
     @Test
+    public void searchQuery_with_only_table_set() throws Exception {
+        insertTestDataIntoFirstTable();
+
+        SearchQuery query = new SearchQuery("first");
+
+        Cursor c = db.get(query);
+
+        assertEquals(1, c.getCount());
+        c.close();
+    }
+
+    @Test
+    public void searchQuery_with_where_clause() throws Exception {
+        insertTestDataIntoFirstTable();
+        SearchQuery query = new SearchQuery("first", "name = 'john'");
+
+        Cursor c = db.get(query);
+
+        assertEquals(0, c.getCount());
+        c.close();
+    }
+
+    @Test
+    public void searchQuery_with_columns() throws Exception {
+        insertTestDataIntoFirstTable();
+        SearchQuery query = new SearchQuery("first", new String[]{"age"}, null);
+
+        Cursor c = db.get(query);
+
+        assertEquals(1, c.getCount());
+        assertEquals(1, c.getColumnCount());
+        c.close();
+    }
+
+    @Test
     public void multitableSearchQuery_with_two_tables() throws Exception {
         insertTestDataIntoFirstTable();
         insertTestDataIntoSecondTable();
