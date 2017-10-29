@@ -71,6 +71,15 @@ public class SqlDatabase extends SQLiteOpenHelper implements Database {
         }
     }
 
+    @Override
+    public void update(Query query) throws DatabaseException {
+        try(SQLiteDatabase db = this.getWritableDatabase()) {
+            db.execSQL(query.getQuery());
+        } catch (SQLiteException e) {
+            throw new DatabaseException("Could not update the database", e);
+        }
+    }
+
     /**
      * Called when the database is created for the first time. This is where the
      * creation of tables and the initial population of the tables should happen.

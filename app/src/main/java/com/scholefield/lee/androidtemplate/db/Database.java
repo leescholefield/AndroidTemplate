@@ -29,10 +29,17 @@ public interface Database {
     Cursor get(Query query) throws DatabaseException;
 
     /**
-     * Deletes an entry from the database.
+     * Deletes a record from the database.
      *
      * @throws DatabaseException if an i/o error occurs.
      */
     void delete(Query query) throws DatabaseException;
+
+    /**
+     * Updates an existing record in the database.
+     *
+     * @throws DatabaseException if an i/o error occurs.
+     */
+    void update(Query query) throws DatabaseException;
 
 }
