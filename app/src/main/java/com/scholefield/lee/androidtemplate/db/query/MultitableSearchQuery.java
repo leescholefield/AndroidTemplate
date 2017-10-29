@@ -1,35 +1,65 @@
 package com.scholefield.lee.androidtemplate.db.query;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * todo more than two tables.
- * todo doesnt make sense to have getTable, getWhere from query since they return single string
+ *
  */
 public class MultitableSearchQuery implements Query {
 
-    private String[] tables;
-    private String onClause;
+    private String firstTable;
+    private List<Table> joinedTables;
     private String whereCondition;
     private String[] columns;
 
-    public MultitableSearchQuery(@NonNull String[] tables, @NonNull String onClause) {
-        if (tables.length != 2) {
-            throw new IllegalArgumentException("Must have only two tables");
+    public static class Builder {
+
+        private String table;
+        private String[] columns;
+        private List<Table> tables;
+        private String where;
+
+        public Builder(String table) {
+            this.table = table;
+            tables = new ArrayList<>();
         }
 
-        this.tables = tables;
-        this.onClause = onClause;
+        public Builder columns(String[] columns) {
+            this.columns = columns;
+            return this;
+        }
+
+        public Builder table(String table, String onClause) {
+            Table t = new Table(table, onClause);
+            tables.add(t);
+            return this;
+        }
+
+        public Builder where(String where) {
+            this.where = where;
+            return this;
+        }
+
+        public MultitableSearchQuery build() {
+            if (tables.size() == 0) {
+                throw new IllegalArgumentException("no joinedTables specified");
+            }
+            return new MultitableSearchQuery(table, tables, where, columns);
+        }
+
+
     }
 
-    public MultitableSearchQuery(@NonNull String[] tables, @NonNull String onClause, String whereClause) {
-        this(tables, onClause);
-        this.whereCondition = whereClause;
-    }
-
-    public MultitableSearchQuery(@NonNull String[] tables, @NonNull String onClause, String whereClause, String[] columns) {
-        this(tables, onClause, whereClause);
+    /**
+     * Private constructor used by {@link Builder} class.
+     */
+    private MultitableSearchQuery(String firstTable, List<Table> joinedTables, String where, String[] columns) {
+        this.firstTable = firstTable;
+        this.joinedTables = joinedTables;
+        this.whereCondition = where;
         this.columns = columns;
     }
 
@@ -44,7 +74,7 @@ public class MultitableSearchQuery implements Query {
         }
 
         // append table
-        query += "FROM " + tables[0] + " JOIN " + tables[1] + " ON " + onClause;
+        query += tablesToString();
 
         if(whereCondition != null) {
             query = appendWhereConditional(query);
@@ -55,6 +85,18 @@ public class MultitableSearchQuery implements Query {
 
     private String appendWhereConditional(String query) {
         query = query + " WHERE " + whereCondition;
+        return query;
+    }
+
+    /**
+     * package-private so it can be tested.
+     */
+    String tablesToString() {
+        String query = "FROM " + firstTable;
+        for (Table table : joinedTables) {
+            query += " INNER JOIN " + table.name + " ON " + table.onClause;
+        }
+
         return query;
     }
 
@@ -101,5 +143,16 @@ public class MultitableSearchQuery implements Query {
     @Override
     public String[] getColumns() {
         return new String[0];
+    }
+
+    private static class Table {
+
+        private String name;
+        private String onClause;
+
+        private Table(String table, String onClause) {
+            this.name = table;
+            this.onClause = onClause;
+        }
     }
 }

@@ -15,39 +15,79 @@ public class MultitableSearchQueryTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void getQuery_with_tables_and_on_clause() throws Exception {
-        String expected = "SELECT * FROM table1 JOIN table2 ON table1.id = table2.id";
+    public void getQuery_with_all_values_set() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id")
+                .columns(new String[]{"id", "name", "age"})
+                .where("firstTable.age > 20")
+                .build();
 
-        String actual = new MultitableSearchQuery(new String[]{"table1", "table2"}, "table1.id = table2.id").getQuery();
+        String expected = "SELECT id, name, age FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id " +
+                "WHERE firstTable.age > 20";
 
-        assertEquals(expected, actual);
+        assertEquals(expected, query.getQuery());
     }
 
     @Test
-    public void getQuery_with_where_clause() throws Exception {
-        String expected = "SELECT * FROM table1 JOIN table2 ON table1.id = table2.id WHERE table1.id = 1";
+    public void getQuery_with_column_not_set() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id")
+                .where("firstTable.age > 20")
+                .build();
 
-        String actual = new MultitableSearchQuery(new String[]{"table1", "table2"}, "table1.id = table2.id",
-                "table1.id = 1").getQuery();
+        String expected = "SELECT * FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id " +
+                "WHERE firstTable.age > 20";
 
-        assertEquals(expected, actual);
+        assertEquals(expected, query.getQuery());
     }
 
     @Test
-    public void passing_an_array_with_only_one_element_to_constructor_throws_exception() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
+    public void getQuery_with_where_not_set() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id")
+                .columns(new String[]{"id", "name", "age"})
+                .build();
 
-        new MultitableSearchQuery(new String[]{"table"}, "on clause");
+        String expected = "SELECT id, name, age FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id";
+
+        assertEquals(expected, query.getQuery());
     }
 
     @Test
-    public void getQuery_with_columns() throws Exception {
-        String expected = "SELECT name, dob FROM table1 JOIN table2 ON table1.id = table2.id WHERE table1.id = 1";
+    public void getQuery_with_three_tables() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id")
+                .table("thirdTable", "firstTable.id = thirdTable.id")
+                .columns(new String[]{"id", "name", "age"})
+                .where("firstTable.age > 20")
+                .build();
 
-        String actual = new MultitableSearchQuery(new String[]{"table1", "table2"}, "table1.id = table2.id",
-                "table1.id = 1", new String[]{"name", "dob"}).getQuery();
+        String expected = "SELECT id, name, age FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id " +
+                "INNER JOIN thirdTable ON firstTable.id = thirdTable.id WHERE firstTable.age > 20";
 
-        assertEquals(expected, actual);
+        assertEquals(expected, query.getQuery());
+    }
+
+    @Test
+    public void tablesToString_with_one_join() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id").build();
+
+        String expected = "FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id";
+
+        assertEquals(expected, query.tablesToString());
+    }
+
+    @Test
+    public void tablesToString_with_two_joins() throws Exception {
+        MultitableSearchQuery query = new MultitableSearchQuery.Builder("firstTable")
+                .table("secondTable", "firstTable.id = secondTable.id")
+                .table("thirdTable", "firstTable.id = thirdTable.id").build();
+
+        String expected = "FROM firstTable INNER JOIN secondTable ON firstTable.id = secondTable.id " +
+                "INNER JOIN thirdTable ON firstTable.id = thirdTable.id";
+
+        assertEquals(expected, query.tablesToString());
     }
 
 
