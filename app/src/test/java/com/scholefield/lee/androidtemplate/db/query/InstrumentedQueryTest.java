@@ -140,9 +140,6 @@ public class InstrumentedQueryTest {
             return 1;
         }
 
-        /**
-         * File the database should be saved under.
-         */
         @Override
         public String getFileName() {
             return "instrumentedquerytest.db";
