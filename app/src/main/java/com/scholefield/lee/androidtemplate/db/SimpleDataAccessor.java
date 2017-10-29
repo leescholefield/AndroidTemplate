@@ -30,6 +30,7 @@ public class SimpleDataAccessor<T> implements DataAccessor<T> {
      *
      * @param obj   object to save.
      * @param table table to save to.
+     * @throws NullPointerException is the default {@link DataWriter} has not been set. (see {@link #setDefaultWriter}).
      */
     @Override
     public void put(T obj, String table) {
@@ -58,6 +59,23 @@ public class SimpleDataAccessor<T> implements DataAccessor<T> {
     }
 
     /**
+     * Returns a list of {@link T}s from the database using the {@code query}. This will use the {@link DataReader} set via
+     * {@link #setDefaultReader}.
+     *
+     * @param query       database query.
+     * @param forceUpdate if {@code false} this will first check the cache (if the implementation has one) before the database.
+     * @throws NullPointerException if the default {@link DataReader} has not been set. (see {@link #setDefaultReader}.
+     */
+    @Override
+    public List<T> get(SearchQuery query, boolean forceUpdate) {
+        if (defaultReader == null) {
+            throw new NullPointerException("Default reader is null. You must call setReader");
+        }
+
+        return get(query, forceUpdate, defaultReader);
+    }
+
+    /**
      * Returns a list of {@link T}s from the database using the {@code query}.
      *
      * @param query       database query.
@@ -81,22 +99,6 @@ public class SimpleDataAccessor<T> implements DataAccessor<T> {
         }
 
         return results;
-    }
-
-    /**
-     * Returns a list of {@link T}s from the database using the {@code query}. This will use the {@link DataReader} set via
-     * {@link #setDefaultReader}.
-     *
-     * @param query       database query.
-     * @param forceUpdate if {@code false} this will first check the cache (if the implementation has one) before the database.
-     */
-    @Override
-    public List<T> get(SearchQuery query, boolean forceUpdate) {
-        if (defaultReader == null) {
-            throw new NullPointerException("Default reader is null. You must call setReader");
-        }
-
-        return get(query, forceUpdate, defaultReader);
     }
 
     /**
