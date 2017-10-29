@@ -166,6 +166,52 @@ public class SqlDatabaseTest {
     }
 
     @Test
+    public void update_successfully_updates_record() throws Exception {
+        insertTestDataIntoTable1();
+
+        classUnderTest.update(new TestQuery() {
+            @Override
+            public String getQuery() {
+                return "UPDATE first SET name = 'john' WHERE name='lee'";
+            }
+        });
+
+        SQLiteDatabase db = classUnderTest.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT * FROM first WHERE name='john'", null);
+
+        assertEquals(1, c.getCount());
+        c.close();
+    }
+
+    @Test
+    public void update_throws_exception_when_given_invalid_table() throws Exception {
+        insertTestDataIntoTable1();
+
+        expectedException.expect(DatabaseException.class);
+
+        classUnderTest.update(new TestQuery() {
+            @Override
+            public String getQuery() {
+                return "UPDATE invalid SET name = 'john' WHERE name='lee'";
+            }
+        });
+    }
+
+    @Test
+    public void update_throws_exception_when_given_nonexistant_column() throws Exception {
+        insertTestDataIntoTable1();
+
+        expectedException.expect(DatabaseException.class);
+
+        classUnderTest.update(new TestQuery() {
+            @Override
+            public String getQuery() {
+                return "UPDATE first SET non_exist = 'john'";
+            }
+        });
+    }
+
+    @Test
     public void onCreate_throws_exception_if_config_does_not_contain_any_table_create_statements() throws Exception {
         DatabaseConfig invalid = emptyDbConfig();
         SqlDatabase db = new SqlDatabase(RuntimeEnvironment.application, invalid);
