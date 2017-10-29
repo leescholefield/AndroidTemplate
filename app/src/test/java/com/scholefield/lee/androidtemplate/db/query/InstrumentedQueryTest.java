@@ -114,6 +114,54 @@ public class InstrumentedQueryTest {
         c.close();
     }
 
+    @Test
+    public void updateQuery_with_string() throws Exception {
+        insertTestDataIntoFirstTable();
+
+        ContentValues cv = new ContentValues();
+        cv.put("name", "john");
+        UpdateQuery query = new UpdateQuery("first", cv, "name = 'lee'");
+        db.update(query);
+
+        Cursor c = db.get(new SearchQuery("first"));
+        c.moveToFirst();
+        assertEquals("john", c.getString(c.getColumnIndexOrThrow("name")));
+
+        c.close();
+    }
+
+    @Test
+    public void updateQuery_with_int() throws Exception {
+        insertTestDataIntoFirstTable();
+
+        ContentValues cv = new ContentValues();
+        cv.put("age", 25);
+        UpdateQuery query = new UpdateQuery("first", cv, "name = 'lee'");
+        db.update(query);
+
+        Cursor c = db.get(new SearchQuery("first"));
+        c.moveToFirst();
+        assertEquals(25, c.getInt(c.getColumnIndex("age")));
+        c.close();
+    }
+
+    @Test
+    public void updateQuery_with_multiple_values() throws Exception {
+        insertTestDataIntoFirstTable();
+
+        ContentValues cv = new ContentValues();
+        cv.put("age", 25);
+        cv.put("name", "john");
+        UpdateQuery query = new UpdateQuery("first", cv, "name = 'lee'");
+        db.update(query);
+
+        Cursor c = db.get(new SearchQuery("first"));
+        c.moveToFirst();
+        assertEquals(25, c.getInt(c.getColumnIndex("age")));
+        assertEquals("john", c.getString(c.getColumnIndex("name")));
+        c.close();
+    }
+
     private void insertTestDataIntoFirstTable() throws Exception {
         db.insert("first", createContentValues("lee", 24));
     }
