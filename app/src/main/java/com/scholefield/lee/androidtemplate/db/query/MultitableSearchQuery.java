@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Searches multiple tables using an INNER JOIN. Unlike other Queries this uses a Builder pattern for instantiation.
  */
 public class MultitableSearchQuery implements Query {
 
@@ -15,6 +15,11 @@ public class MultitableSearchQuery implements Query {
     private String whereCondition;
     private String[] columns;
 
+    /**
+     * Private constructor to avoid instantiation.
+     */
+    private MultitableSearchQuery(){}
+
     public static class Builder {
 
         private String table;
@@ -22,35 +27,53 @@ public class MultitableSearchQuery implements Query {
         private List<Table> tables;
         private String where;
 
+        /**
+         * @param table initial table to search.
+         */
         public Builder(String table) {
             this.table = table;
             tables = new ArrayList<>();
         }
 
-        public Builder columns(String[] columns) {
-            this.columns = columns;
-            return this;
-        }
-
+        /**
+         * Appends a new table for an inner join.
+         *
+         * @param table table name.
+         * @param onClause SQL on clause (not including "ON"). For example, "artists.id = album.artist_id".
+         */
         public Builder table(String table, String onClause) {
             Table t = new Table(table, onClause);
             tables.add(t);
             return this;
         }
 
+        /**
+         * Columns to return. Should be prefaced with the table name. For example, "users.name"
+         */
+        public Builder columns(String[] columns) {
+            this.columns = columns;
+            return this;
+        }
+
+        /**
+         * SQL where clause.
+         */
         public Builder where(String where) {
             this.where = where;
             return this;
         }
 
+        /**
+         * Creates a new {@link MultitableSearchQuery}.
+         *
+         * @throws IllegalArgumentException if no tables have to been created to join to.
+         */
         public MultitableSearchQuery build() {
             if (tables.size() == 0) {
                 throw new IllegalArgumentException("no joinedTables specified");
             }
             return new MultitableSearchQuery(table, tables, where, columns);
         }
-
-
     }
 
     /**
@@ -145,6 +168,9 @@ public class MultitableSearchQuery implements Query {
         return new String[0];
     }
 
+    /**
+     * Utility class for wrapping a joined table and on clause.
+     */
     private static class Table {
 
         private String name;
