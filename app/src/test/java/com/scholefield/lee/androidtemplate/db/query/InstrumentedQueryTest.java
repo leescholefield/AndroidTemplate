@@ -87,6 +87,33 @@ public class InstrumentedQueryTest {
         c.close();
     }
 
+    @Test
+    public void deleteQuery_whole_table() throws Exception {
+        insertTestDataIntoFirstTable();
+
+        DeleteQuery query = new DeleteQuery("first");
+
+        db.delete(query);
+
+        Cursor c = db.get(new SearchQuery("first"));
+        assertEquals(0, c.getCount());
+        c.close();
+    }
+
+    @Test
+    public void deleteQuery_single_entry() throws Exception {
+        insertTestDataIntoFirstTable();
+        db.insert("first", createContentValues("jake", 20));
+
+        DeleteQuery query = new DeleteQuery("first", "name='lee'");
+        db.delete(query);
+
+        Cursor c = db.get(new SearchQuery("first"));
+        assertEquals(1, c.getCount());
+
+        c.close();
+    }
+
     private void insertTestDataIntoFirstTable() throws Exception {
         db.insert("first", createContentValues("lee", 24));
     }
