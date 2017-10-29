@@ -113,10 +113,19 @@ public class CachedDataAccessor<T> extends SimpleDataAccessor<T> {
         existing.add(item);
     }
 
+    /**
+     * Returns the value associated with the {@code key} from the {@link #cache}, or {@code null} if there is no such key.
+     */
     private List<T> checkCache(String key) {
         return cache.get(key);
     }
 
+    /**
+     * Used for testing.
+     */
+    void setCache(Cache<String, List<T>> cache) {
+        this.cache = cache;
+    }
     @Override
     public void setDefaultReader(DataReader<T> reader) {
         this.reader = reader;
@@ -127,11 +136,11 @@ public class CachedDataAccessor<T> extends SimpleDataAccessor<T> {
         this.writer = writer;
     }
 
+    /**
+     * Used for testing.
+     */
     Cache<String, List<T>> getCache() {
         return cache;
     }
 
-    void setCache(Cache<String, List<T>> cache) {
-        this.cache = cache;
-    }
 }
