@@ -7,6 +7,18 @@ import android.support.v4.app.Fragment;
 /**
  * Simple Fragment base implementation of {@link BaseContract.BaseView}. This will manage the lifecycle of the associated
  * presenter.
+ *
+ * The main lifecycle events will be managed in the {@link #onCreate(Bundle)} and {@link #onPause()} methods. All subclasses
+ * should call {@code super} implementations when overriding these methods.
+ *
+ *      In {@link #onCreate} it will set the {@link #presenter} by first checking with the {@link PresenterManager} for any
+ *      existing instances. If none exist it will then call {@link #createPresenter()}.
+ *
+ *      In {@link #onPause()} it will check if the Fragment is being permanently destroyed. This is determined by checking if the
+ *      hosting activity is finishing (via {@link android.app.Activity#isFinishing()}), or this fragment is being removed,
+ *      or is already detatched from the activity (via {@link #isRemoving()} and {@link #isDetached()}) . If
+ *      so it will call {@link #onFragmentDestroyed} to perform any clean-up (by default this will deregister the presenter
+ *      with the manager).
  */
 public abstract class BaseFragmentImpl<T extends BaseContract.BasePresenter> extends Fragment implements BaseContract.BaseView {
 
