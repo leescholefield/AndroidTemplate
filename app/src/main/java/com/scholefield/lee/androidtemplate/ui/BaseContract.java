@@ -1,10 +1,15 @@
 package com.scholefield.lee.androidtemplate.ui;
 
 /**
- * Defines the base contract between a Presenter and a View.
+ * Defines the base contract between a Presenter and a View. All BaseFragament/Presenter/Activity subclasses should implement
+ * the corresponding interface.
  */
 public interface BaseContract {
 
+    /*
+    * Currently just a stub, however BaseFragment/Activity still implements this in case we need to add functionality in
+     * the future.
+    */
     interface BaseView {
     }
 
