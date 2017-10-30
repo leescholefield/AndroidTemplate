@@ -54,19 +54,4 @@ public class SearchQueryTest {
         assertEquals(expected, query.getQuery());
     }
 
-    @Test
-    public void getColumns_returns_empty_array_when_columns_not_set() throws Exception {
-        SearchQuery query = new SearchQuery("table1", null, null);
-
-        assertEquals(0, query.getColumns().length);
-    }
-
-    @Test
-    public void getColumns_returns_array_of_columns_when_set() throws Exception {
-        SearchQuery query = new SearchQuery("table1", new String[]{"name", "dob"}, null);
-
-        assertEquals(2, query.getColumns().length);
-    }
-
-
 }
