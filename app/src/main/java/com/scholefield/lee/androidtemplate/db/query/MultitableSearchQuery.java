@@ -143,32 +143,6 @@ public class MultitableSearchQuery implements Query {
     }
 
     /**
-     * Returns the SQL table this query should be performed on.
-     */
-    @Override
-    public String getTable() {
-        return null;
-    }
-
-    /**
-     * Returns the SQL where clause or {@code null} if one was not given.
-     */
-    @Nullable
-    @Override
-    public String getWhereClause() {
-        return null;
-    }
-
-    /**
-     * Returns an array of table columns that this query should be performed on. If this is not applicable this will
-     * return an empty array.
-     */
-    @Override
-    public String[] getColumns() {
-        return new String[0];
-    }
-
-    /**
      * Utility class for wrapping a joined table and on clause.
      */
     private static class Table {

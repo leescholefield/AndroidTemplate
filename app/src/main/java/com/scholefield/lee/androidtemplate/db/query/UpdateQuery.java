@@ -14,10 +14,9 @@ public class UpdateQuery implements Query {
     private String where;
 
     /**
-     *
      * @param table name of table to update
      * @param newValues key is name of column to update and value is new column value.
-     * @param where optional where clause.
+     * @param where optional where clause. If {@code null} this will update every record in table
      */
     public UpdateQuery(String table, ContentValues newValues, String where) {
         this.table = table;
@@ -26,7 +25,7 @@ public class UpdateQuery implements Query {
     }
 
     /**
-     * Returns a SQLite query String.
+     * Returns a SQLite query String in the format "UPDATE [table] SET [column]=[new value] [where]"
      */
     @Override
     public String getQuery() {
@@ -64,31 +63,5 @@ public class UpdateQuery implements Query {
         }
 
         return query;
-    }
-
-    /**
-     * Returns the SQL table this query should be performed on.
-     */
-    @Override
-    public String getTable() {
-        return null;
-    }
-
-    /**
-     * Returns the SQL where clause or {@code null} if one was not given.
-     */
-    @Nullable
-    @Override
-    public String getWhereClause() {
-        return null;
-    }
-
-    /**
-     * Returns an array of table columns that this query should be performed on. If this is not applicable this will
-     * return an empty array.
-     */
-    @Override
-    public String[] getColumns() {
-        return new String[0];
     }
 }
