@@ -1,22 +1,35 @@
 package com.scholefield.lee.androidtemplate.ui;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
 /**
- * Simple Activity implementation of {@link BaseContract.BaseView}. This view will manage the lifecycle of the associated
+ * Simple Activity implementation of {@link BaseContract.BaseView} that manages the lifecycle of the associated
  * presenter.
+ *
+ * The main lifecycle events will be managed in the {@link #onCreate(Bundle)} and {@link #onPause()} methods. All subclasses
+ * should call {@code super} implementations when overriding these methods.
+ *
+ *      In {@link #onCreate} it will set the {@link #presenter} by first checking with the {@link PresenterManager} for any
+ *      existing instances. If none exist it will then call {@link #createPresenter()}.
+ *
+ *      In {@link #onPause()} it will check if the activity is being permanently destroyed (via {@link #isFinishing()}. If
+ *      so it will call {@link #onActivityDestroyed()} to perform any clean-up (by default this will deregister the presenter
+ *      with the manager).
+ *
  */
 public abstract class BaseActivityImpl<T extends BaseContract.BasePresenter> extends AppCompatActivity
         implements BaseContract.BaseView {
 
     protected T presenter;
 
+    /**
+     * Sets the {@link #presenter}. Subclasses should always call super implementation.
+     */
     @Override
-    public void onCreate(Bundle savedInstanceState, PersistableBundle persistentState) {
-        super.onCreate(savedInstanceState, persistentState);
-
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         presenter = getPresenter();
     }
 
