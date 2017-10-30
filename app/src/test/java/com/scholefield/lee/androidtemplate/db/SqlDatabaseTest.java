@@ -3,7 +3,6 @@ package com.scholefield.lee.androidtemplate.db;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.annotation.Nullable;
 import com.scholefield.lee.androidtemplate.db.query.Query;
 import org.junit.After;
 import org.junit.Before;
@@ -315,31 +314,6 @@ public class SqlDatabaseTest {
     }
 
     private abstract class TestQuery implements Query {
-        /**
-         * Returns the SQL table this query should be performed on.
-         */
-        @Override
-        public String getTable() {
-            return null;
-        }
-
-        /**
-         * Returns the SQL where clause or {@code null} if one was not given.
-         */
-        @Nullable
-        @Override
-        public String getWhereClause() {
-            return null;
-        }
-
-        /**
-         * Returns an array of table columns that this query should be performed on. If this is not applicable this will
-         * return an empty array.
-         */
-        @Override
-        public String[] getColumns() {
-            return new String[0];
-        }
     }
 
 }
