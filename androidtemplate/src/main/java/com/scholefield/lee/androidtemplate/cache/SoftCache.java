@@ -5,10 +5,12 @@ import java.lang.ref.SoftReference;
 import java.util.*;
 
 /**
- * An in-memory cache that stores each item as a {@code SoftReference}.
+ * An in-memory cache that stores each item as a {@code SoftReference}. Although getting/putting to the cache is synchronized,
+ * you should be careful about modifying any stored item in-case it is being used by another thread.
  *
  * This implementation will evict the least-recently used item from the cache when the total number of items exceeds
- * {@link #maxSize}, or when the item has been garbage-collected.
+ * {@link #maxSize}, or when the item has been garbage-collected. A size of an item is determined by a call to {@link #itemSize}.
+ * The default behaviour is to return 1 for all non-collection types and the number of items in the collection for collection types.
  */
 public class SoftCache<K, V> implements Cache<K, V> {
 
@@ -33,6 +35,11 @@ public class SoftCache<K, V> implements Cache<K, V> {
     private int maxSize;
 
     /**
+     * Current number of items in the {@code itemMap}.
+     */
+    private int currentSize = 0;
+
+    /**
      * Removed values that have been gc'ed from the {@link #itemMap}.
      */
     private Thread cleanUpThread = new CleanupThread();
@@ -41,6 +48,10 @@ public class SoftCache<K, V> implements Cache<K, V> {
      * Public constructor. Instantiates the {@link #itemMap} and sets the {@code maxSize}.
      */
     public SoftCache(int maxSize) {
+        if (maxSize <= 0) {
+            throw new IllegalArgumentException("maxSize must be greater than 0");
+        }
+
         this.maxSize = maxSize;
 
         itemMap = new LinkedHashMap<>();
@@ -56,7 +67,7 @@ public class SoftCache<K, V> implements Cache<K, V> {
             throw new NullPointerException("key == null");
 
         synchronized (this) {
-            SoftReference<V> sr = itemMap.get(key);
+            SoftValue sr = itemMap.get(key);
 
             // key not found
             if (sr == null) {
@@ -67,6 +78,7 @@ public class SoftCache<K, V> implements Cache<K, V> {
             // key found but item been gc
             if (item == null) {
                 itemMap.remove(key);
+                currentSize -= sr.size();
             } else {
                 moveToEndOfKeyInsertionOrder(key);
             }
@@ -112,12 +124,20 @@ public class SoftCache<K, V> implements Cache<K, V> {
 
         synchronized (this) {
 
-            if (keyInsertionOrder.size() >= maxSize) {
-                K oldest = keyInsertionOrder.poll();
-                itemMap.remove(oldest);
+            SoftValue sv = createSoftValue(key, item);
+            int itemSize = sv.size();
+
+            if(itemSize > maxSize) {
+                throw new IllegalArgumentException("size of inserted item is greater than maxSize");
             }
 
-            itemMap.put(key, new SoftValue(key, item, referenceQueue));
+            while(currentSize + itemSize > maxSize) {
+                K oldest = keyInsertionOrder.poll();
+                removeItem(oldest);
+            }
+
+            itemMap.put(key, sv);
+            currentSize += itemSize;
             saveToKeyInsertionOrder(key);
         }
     }
@@ -130,6 +150,7 @@ public class SoftCache<K, V> implements Cache<K, V> {
         synchronized (this) {
             itemMap.clear();
             keyInsertionOrder.clear();
+            currentSize = 0;
         }
     }
 
@@ -139,8 +160,26 @@ public class SoftCache<K, V> implements Cache<K, V> {
     @Override
     public void remove(K key) {
         synchronized (this) {
-            itemMap.remove(key);
-            keyInsertionOrder.remove(key);
+            removeItem(key);
+        }
+    }
+
+    /**
+     * Removes an item from the underlying map, its key from the key-list and decrement {@code #currentSize} by item size.
+     */
+    private void removeItem(SoftValue item) {
+        K key = item.getKey();
+        itemMap.remove(key);
+        keyInsertionOrder.remove(key);
+
+        int size = item.size();
+        currentSize -= size;
+    }
+
+    public void removeItem(K key) {
+        SoftValue sv = itemMap.get(key);
+        if (sv != null) {
+            removeItem(sv);
         }
     }
 
@@ -149,7 +188,7 @@ public class SoftCache<K, V> implements Cache<K, V> {
      */
     @Override
     public synchronized int size() {
-        return itemMap.size();
+        return currentSize;
     }
 
     /**
@@ -168,7 +207,8 @@ public class SoftCache<K, V> implements Cache<K, V> {
      * @return a new {@code SoftValue} instance.
      */
     SoftValue createSoftValue(K key, V value) {
-        return new SoftValue(key, value, referenceQueue);
+        int size = itemSize(value);
+        return new SoftValue(key, value, size, referenceQueue);
     }
 
     /**
@@ -190,6 +230,21 @@ public class SoftCache<K, V> implements Cache<K, V> {
     }
 
     /**
+     * Returns the size of {@code item}. If item is an instance of Collection or Map, this will return the total number of
+     * items. For any other type this will return 1.
+     */
+    int itemSize(V item) {
+        int size = 1;
+        if (item instanceof Collection) {
+            size = ((Collection) item).size();
+        } else if (item instanceof Map) {
+            size = ((Map) item).values().size();
+        }
+
+        return size;
+    }
+
+    /**
      * Extension of {@link SoftReference<V>} that also stores the key it's saved under in the map. This is to make it easier
      * to remove from the map when processing the {@code ReferenceQueue}.
      */
@@ -200,14 +255,19 @@ public class SoftCache<K, V> implements Cache<K, V> {
          */
         private K key;
 
-        SoftValue(K key, V ref, ReferenceQueue<? super V> queue) {
+        private int size;
+
+        SoftValue(K key, V ref, int size, ReferenceQueue<? super V> queue) {
             super(ref, queue);
             this.key = key;
+            this.size = size;
         }
 
         K getKey() {
             return key;
         }
+
+        int size() {return size;}
     }
 
     /**
