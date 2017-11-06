@@ -7,6 +7,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -74,6 +76,13 @@ public class SoftCacheTest {
     }
 
     @Test
+    public void put_increments_currentSize_by_item_size() throws Exception {
+        classUnderTest.put("key", "value");
+
+        assertEquals(1, classUnderTest.size());
+    }
+
+    @Test
     public void put_removes_oldest_entry_when_max_size_reached() throws Exception {
         classUnderTest.put("first", "first value");
         classUnderTest.put("second", "second value");
@@ -104,6 +113,15 @@ public class SoftCacheTest {
     }
 
     @Test
+    public void remove_decrements_currentSize() throws Exception {
+        classUnderTest.put("key", "value");
+
+        classUnderTest.remove("key");
+
+        assertEquals(0, classUnderTest.size());
+    }
+
+    @Test
     public void removeAll_empties_map() throws Exception {
         classUnderTest.put("first", "value");
         classUnderTest.put("second", "value");
@@ -124,6 +142,16 @@ public class SoftCacheTest {
     }
 
     @Test
+    public void removeAll_resets_currentSize() throws Exception {
+        classUnderTest.put("first", "value");
+        classUnderTest.put("second", "value");
+
+        classUnderTest.removeAll();
+
+        assertEquals(0, classUnderTest.size());
+    }
+
+    @Test
     public void keyInsertionOrder_does_not_allow_duplicate_value() throws Exception {
         classUnderTest.put("key", "value");
         classUnderTest.put("key", "value");
@@ -131,6 +159,21 @@ public class SoftCacheTest {
         assertEquals(1, classUnderTest.getKeyInsertionOrder().size());
     }
 
+    @Test
+    public void itemSize_returns_1_when_value_is_not_a_collection() throws Exception {
+        assertEquals(1, classUnderTest.itemSize("item"));
+    }
+
+    @Test
+    public void itemSize_returns_collection_size_when_value_is_collection() throws Exception {
+        SoftCache<String, List<String>> cache = new SoftCache<>(5);
+        List<String> list = new ArrayList<>();
+        list.add("first");
+        list.add("second");
+        int result = cache.itemSize(list);
+
+        assertEquals(2, result);
+    }
 
     /**
      * Note, this will sleep for 1 second to allow time for the clean up thread to execute.
