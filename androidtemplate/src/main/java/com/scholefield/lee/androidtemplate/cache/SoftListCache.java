@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * An extension of {@link Cache} for when the stored item is of type list. This provides easy methods for removing/ inserting
- * an item into a cached list.
+ * an individual item into a cached list.
  */
 public class SoftListCache<K, V> implements ListCache<K, V> {
 
@@ -25,6 +25,8 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
     private ReferenceQueue<List<V>> referenceQueue = new ReferenceQueue<>();
 
     /**
+     * Constructor. Starts a new {@link CleanUpThread}.
+     *
      * @param initialSize the initial size of the created Map. If it is too-small this will have a performance penalty when it
      *                    is increased. Too large and it will waste memory.
      * @param maxSize maximum number of items that can be stored in the cache.
