@@ -1,14 +1,15 @@
 package com.scholefield.lee.androidtemplate.cache;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -246,6 +247,25 @@ public class SoftListCacheTest {
         assertEquals(0, classUnderTest.getKeyInsertionOrder().size());
     }
 
+    /**
+     * Note, this will sleep for 1 second to allow time for the clean up thread to execute.
+     */
+    @Ignore
+    @Test
+    public void cleanUpThread_removes_enqueued_items_from_map_and_keyInsertionOrder() throws Exception {
+        ListCacheTempImp<String, String> classUnderTest = new ListCacheTempImp<>(3);
+        classUnderTest.put("first", createList("first"));
+        classUnderTest.put("second", createList("second"));
+
+        classUnderTest.enqueueItem("first");
+
+        // delay for 1 seconds to allow CleanupThread time to execute
+        Thread.sleep(1000);
+
+        assertEquals(1, classUnderTest.size());
+        assertEquals(1, classUnderTest.getKeyInsertionOrder().size());
+    }
+
     private List<String> createList(String ... values) {
         List<String> l = new ArrayList<>(values.length);
         l.addAll(Arrays.asList(values));
@@ -253,13 +273,24 @@ public class SoftListCacheTest {
     }
 
     private void insertTestValuesIntoDataSet(String key) {
-        List<String> toInsert = new ArrayList<>();
-        toInsert.add("first");
-        toInsert.add("second");
-        Map<String, List<String>> dataSet = classUnderTest.getDataSet();
-        dataSet.put(key, toInsert);
+        List<String> toInsert = createList("first", "second");
+
+        SoftListCache<String, String>.SoftValue sv = classUnderTest.createSoftValue(key, toInsert);
+        classUnderTest.getDataSet().put(key, sv);
 
         classUnderTest.getKeyInsertionOrder().add(key);
+    }
+
+    private class ListCacheTempImp<K, V> extends SoftListCache<K, V> {
+
+        ListCacheTempImp(int maxSize) {
+            super(maxSize);
+        }
+
+        private void enqueueItem(K key) {
+            SoftReference reference = getDataSet().get(key);
+            reference.enqueue();
+        }
     }
 
 
