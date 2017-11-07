@@ -1,5 +1,7 @@
 package com.scholefield.lee.androidtemplate.cache;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.util.*;
 
 /**
@@ -8,17 +10,39 @@ import java.util.*;
  */
 public class SoftListCache<K, V> implements ListCache<K, V> {
 
-    private Map<K, List<V>> dataSet;
+    private Map<K, SoftValue> dataSet;
+
+    /**
+     * The last-used key should be moved to the end of the list.
+     */
     private LinkedList<K> keyInsertionOrder = new LinkedList<>();
 
     private int maxSize;
-    private int currentSize;
+    private int currentSize = 0;
 
-    public SoftListCache(int maxSize) {
+    private Thread cleanUpThread = new CleanUpThread();
+
+    private ReferenceQueue<List<V>> referenceQueue = new ReferenceQueue<>();
+
+    /**
+     * @param initialSize the initial size of the created Map. If it is too-small this will have a performance penalty when it
+     *                    is increased. Too large and it will waste memory.
+     * @param maxSize maximum number of items that can be stored in the cache.
+     */
+    public SoftListCache(int initialSize, int maxSize) {
         this.maxSize = maxSize;
-        this.currentSize = 0;
 
-        dataSet = new HashMap<>();
+        dataSet = new HashMap<>(initialSize);
+        cleanUpThread.start();
+    }
+
+    /**
+     * Constructor. The initial size of the internal map will be set to 1/4 of {@code maxSize}.
+     *
+     * @param maxSize maximum number of items that can be stored in the cache.
+     */
+    public SoftListCache(int maxSize) {
+        this(maxSize / 4, maxSize);
     }
 
     /**
@@ -40,7 +64,7 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
         synchronized (this) {
 
             if (dataSet.containsKey(key)) {
-                int previousSize = dataSet.get(key).size();
+                int previousSize = dataSet.get(key).getSize();
                 currentSize -= previousSize;
             }
 
@@ -49,9 +73,12 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
                 removeItem(oldest);
             }
 
-            dataSet.put(key, item);
+            SoftValue sv = createSoftValue(key, item);
+            int size = sv.getSize();
+
+            dataSet.put(key, sv);
             saveToKeyInsertionOrder(key);
-            currentSize += item.size();
+            currentSize += size;
         }
 
     }
@@ -64,9 +91,10 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
 
         synchronized (this) {
             List<V> insertedList = new ArrayList<>();
-            List<V> previousList = dataSet.get(key);
 
-            if (previousList != null) {
+            SoftValue sv = dataSet.get(key);
+            if (sv != null) {
+                List<V> previousList = sv.get();
                 insertedList.addAll(previousList);
             }
 
@@ -84,8 +112,8 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
         synchronized (this) {
             // will have to check each value in cache
             List<V> removeFrom = null;
-            for (Map.Entry<K, List<V>> kListEntry : dataSet.entrySet()) {
-                List<V> list = kListEntry.getValue();
+            for (Map.Entry<K, SoftValue> kListEntry : dataSet.entrySet()) {
+                List<V> list = kListEntry.getValue().get();
 
                 if (list.contains(item)) {
                     // avoids any unexpected behaviour from modifying map in the for loop.
@@ -124,8 +152,8 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
     }
 
     private void removeItem(K key) {
-        List<V> removed = dataSet.remove(key);
-        currentSize -= removed.size();
+        SoftValue removed = dataSet.remove(key);
+        currentSize -= removed.getSize();
         keyInsertionOrder.remove(key);
     }
 
@@ -139,11 +167,13 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
         }
 
         synchronized (this) {
-            List<V> list = dataSet.get(key);
-            if (list != null) {
+            SoftValue sv = dataSet.get(key);
+            if (sv != null) {
                 saveToKeyInsertionOrder(key);
+                return sv.get();
+            } else {
+                return null;
             }
-            return list;
         }
     }
 
@@ -177,10 +207,74 @@ public class SoftListCache<K, V> implements ListCache<K, V> {
         return maxSize;
     }
 
-    protected Map<K, List<V>> getDataSet() {
+    SoftValue createSoftValue(K key, List<V> value) {
+        int size = value.size();
+        return new SoftValue(key, value, size, referenceQueue);
+    }
+
+    /**
+     * Extension of {@link SoftReference<V>} that also stores the key it's saved under in the map. This is to make it easier
+     * to remove from the map when processing the {@code ReferenceQueue}.
+     */
+    class SoftValue extends SoftReference<List<V>> {
+
+        private K key;
+        private int size;
+
+        SoftValue(K key, List<V> ref, int size, ReferenceQueue<? super List<V>> queue) {
+            super(ref, queue);
+            this.key = key;
+            this.size = size;
+        }
+
+        K getKey() {
+            return key;
+        }
+
+        int getSize() {
+            return size;
+        }
+    }
+
+    /**
+     * Removes garbage collected value from the {@link #dataSet}.
+     */
+    private class CleanUpThread extends Thread {
+
+        final String TAG = CleanUpThread.class.getName();
+
+        CleanUpThread() {
+            setPriority(Thread.MAX_PRIORITY);
+            setName(TAG);
+            setDaemon(true);
+        }
+
+        @SuppressWarnings({"unchecked", "InfiniteLoopStatement"})
+        @Override
+        public void run() {
+            while(true) {
+                try {
+                    // blocks until it gets a new value
+                    SoftValue val = (SoftValue)referenceQueue.remove();
+                    remove(val.getKey());
+                } catch (InterruptedException e) {
+                    // should never happen
+                    throw new Error("CleanUpThread interrupted", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Used for testing.
+     */
+    Map<K, SoftValue> getDataSet() {
         return dataSet;
     }
 
+    /**
+     * Used for testing.
+     */
     List<K> getKeyInsertionOrder() {
         return keyInsertionOrder;
     }
