@@ -15,14 +15,14 @@ import static org.mockito.Mockito.verify;
  *
  */
 @SuppressWarnings("unchecked") // mocked UseCaseCallback
-public class UseCaseHandlerTest {
+public class UseCaseHandlerImpTest {
 
-    private UseCaseHandler classUnderTest;
+    private UseCaseHandlerImp classUnderTest;
 
     @Before
     public void setUp() throws Exception {
         TestUseCaseScheduler scheduler = new TestUseCaseScheduler();
-        classUnderTest = new UseCaseHandler(scheduler);
+        classUnderTest = new UseCaseHandlerImp(scheduler);
     }
 
     @Test
